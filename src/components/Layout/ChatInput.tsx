@@ -2,17 +2,23 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff } from 'lucide-react';
 import type { ChatMessage } from '../../types/task';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useVoiceToText } from '../../hooks/useVoiceToText';
 
 interface ChatInputProps {
     messages: ChatMessage[];
     onSendMessage: (text: string) => void;
-    isMicActive: boolean;
-    onToggleMic: () => void;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ messages, onSendMessage, isMicActive, onToggleMic }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ messages, onSendMessage }) => {
     const [input, setInput] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Voice to Text integration
+    const { isListening, toggleListening } = useVoiceToText((text) => {
+        // When voice is recognized, send it immediately or set it to input
+        // I'll send it immediately for a better "talk-to-do" experience
+        onSendMessage(text);
+    });
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -45,8 +51,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ messages, onSendMessage, isMicAct
                                 maxWidth: '80%',
                                 padding: '10px 16px',
                                 borderRadius: '12px',
-                                background: msg.role === 'user' ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)',
-                                color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
+                                background: msg.role === 'user' ? '#38bdf8' : 'rgba(255,255,255,0.05)',
+                                color: msg.role === 'user' ? '#fff' : '#f8fafc',
                                 fontSize: '0.9rem',
                                 lineHeight: '1.4'
                             }}
@@ -60,22 +66,26 @@ const ChatInput: React.FC<ChatInputProps> = ({ messages, onSendMessage, isMicAct
             <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <button
                     type="button"
-                    onClick={onToggleMic}
+                    onClick={toggleListening}
+                    className={isListening ? 'mic-pulse' : ''}
                     style={{
-                        color: isMicActive ? '#ef4444' : '#94a3b8',
+                        color: isListening ? '#ef4444' : '#94a3b8',
                         padding: '8px',
                         borderRadius: '50%',
-                        background: isMicActive ? 'rgba(239, 68, 68, 0.1)' : 'transparent'
+                        background: isListening ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}
                 >
-                    {isMicActive ? <MicOff size={20} /> : <Mic size={20} />}
+                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
                 </button>
                 <div style={{ flex: 1, position: 'relative' }}>
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Type a task or ask a question..."
+                        placeholder={isListening ? "Listening..." : "Type a task or ask a question..."}
                         style={{
                             width: '100%',
                             padding: '12px 16px',

@@ -13,7 +13,7 @@ const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentView, setCurrentView] = useState<string>('Today');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isMicActive, setIsMicActive] = useState(false);
+
 
   // Keyboard Shortcuts
   useKeyboardShortcuts({
@@ -144,10 +144,9 @@ const App: React.FC = () => {
           <ChatInput
             messages={messages}
             onSendMessage={handleChatInput}
-            isMicActive={isMicActive}
-            onToggleMic={() => setIsMicActive(!isMicActive)}
           />
         </div>
+
       </main>
     </>
   );
