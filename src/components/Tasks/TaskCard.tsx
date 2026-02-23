@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Task } from '../../types/task';
-import { CheckCircle2, Circle, Clock, Tag } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Tag, Hash } from 'lucide-react';
 
 interface TaskCardProps {
     task: Task;
@@ -27,14 +27,30 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
             </button>
 
             <div style={{ flex: 1 }}>
-                <h4 style={{
-                    fontSize: '1rem',
-                    fontWeight: '500',
-                    marginBottom: '4px',
-                    textDecoration: task.status === 'DONE' ? 'line-through' : 'none'
-                }}>
-                    {task.title}
-                </h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                    <h4 style={{
+                        fontSize: '1rem',
+                        fontWeight: '500',
+                        textDecoration: task.status === 'DONE' ? 'line-through' : 'none'
+                    }}>
+                        {task.title}
+                    </h4>
+                    {task.project && (
+                        <span style={{
+                            fontSize: '0.7rem',
+                            background: 'rgba(56, 189, 248, 0.1)',
+                            color: 'var(--accent-color)',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}>
+                            <Hash size={10} />
+                            {task.project}
+                        </span>
+                    )}
+                </div>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.8rem', color: '#94a3b8' }}>
                     {task.dueDateTime && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

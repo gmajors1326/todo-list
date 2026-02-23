@@ -14,7 +14,6 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<string>('Today');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-
   // Keyboard Shortcuts
   useKeyboardShortcuts({
     'n': () => {
@@ -36,7 +35,7 @@ const App: React.FC = () => {
       {
         id: uuidv4(),
         role: 'assistant',
-        content: 'Welcome to Tri-Level Talk-To-Do. Press "N" for new task or just type below.',
+        content: 'Welcome to Tri-Level Talk-To-Do. Try "add task for thetorqking.com" or just use #hashtags.',
         timestamp: Date.now()
       }
     ]);
@@ -51,11 +50,12 @@ const App: React.FC = () => {
     const triage = triageTask(title);
     const newTask: Task = {
       id: uuidv4(),
-      title: title,
+      title: title.replace(/#\S+/g, '').replace(/for \S+/i, '').trim() || title, // Clean title
       priority: triage.priority,
       dueDateTime: triage.dueDate?.toISOString() || null,
       estimateMinutes: null,
       category: triage.category,
+      project: triage.project,
       status: 'OPEN',
       notes: '',
       nextAction: '',
@@ -65,7 +65,7 @@ const App: React.FC = () => {
     };
 
     setTasks(prev => [...prev, newTask]);
-    toast.success(`Task added: ${newTask.title}`);
+    toast.success(`Added to ${newTask.project || 'Inbox'}`);
     return newTask;
   }, []);
 
@@ -89,25 +89,26 @@ const App: React.FC = () => {
     };
     setMessages(prev => [...prev, userMsg]);
 
-    const intent = parseIntent(text);
+    const intent = parseIntent(text) as any;
     let responseContent = '';
 
     if (intent.type === 'CREATE_TASK') {
       const taskDescription = intent.query || text;
       const newTask = addTask(taskDescription);
-      responseContent = `Added: "${newTask.title}" (${newTask.priority}).`;
+      responseContent = `Added: "${newTask.title}" (${newTask.priority})${newTask.project ? ` to project ${newTask.project}` : ''}.`;
     } else if (intent.type === 'QUERY_TASKS') {
       if (intent.filter === 'TODAY_TOP3') {
         setCurrentView('Today');
-        responseContent = "Here's your Today view.";
+        responseContent = "Showing Today's Top 3.";
       } else if (intent.filter === 'HIGH_PRIORITY') {
         setCurrentView('Backlog');
-        responseContent = "Filtering for High Priority.";
-      } else {
-        responseContent = "Updating view...";
+        responseContent = "Showing High Priority tasks.";
       }
+    } else if (intent.type === 'QUERY_PROJECT') {
+      setCurrentView(`Project: ${intent.project}`);
+      responseContent = `Filtering for project: ${intent.project}`;
     } else {
-      responseContent = "I've noted that down. Anything else?";
+      responseContent = "I've noted that down.";
     }
 
     const assistantMsg: ChatMessage = {
@@ -121,16 +122,19 @@ const App: React.FC = () => {
 
   const highTasksCount = useMemo(() => tasks.filter(t => t.priority === 'HIGH' && t.status !== 'DONE').length, [tasks]);
 
+  // Unique projects list
+  const projects = useMemo(() => Array.from(new Set(tasks.map(t => t.project).filter(Boolean))), [tasks]);
+
   return (
     <>
       <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
-      <Sidebar activeView={currentView} onViewChange={setCurrentView} />
+      <Sidebar activeView={currentView} onViewChange={setCurrentView} projects={projects as string[]} />
       <main className="main-content">
         <div className="content-area">
           {highTasksCount > 7 && (
             <div className="glass" style={{ padding: '12px 20px', marginBottom: '24px', borderLeft: '4px solid #ef4444', background: 'rgba(239, 68, 68, 0.1)' }}>
               <p style={{ color: '#ef4444', fontWeight: 'bold' }}>⚠️ High Priority Overload</p>
-              <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>You have {highTasksCount} high priority tasks. Review your commitments.</p>
+              <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Review your commitments.</p>
             </div>
           )}
           <MainView
@@ -146,7 +150,6 @@ const App: React.FC = () => {
             onSendMessage={handleChatInput}
           />
         </div>
-
       </main>
     </>
   );

@@ -1,7 +1,7 @@
 import * as chrono from 'chrono-node';
 import type { Priority, Category } from '../types/task';
 
-export const triageTask = (text: string): { priority: Priority; category: Category; dueDate: Date | null } => {
+export const triageTask = (text: string): { priority: Priority; category: Category; dueDate: Date | null, project?: string } => {
     const lowerText = text.toLowerCase();
 
     let priority: Priority = 'MED';
@@ -35,7 +35,26 @@ export const triageTask = (text: string): { priority: Priority; category: Catego
     else if (lowerText.includes('errands')) category = 'Errands';
     else if (lowerText.includes('content')) category = 'Content';
 
-    return { priority, category, dueDate };
+    // Project detection
+    let project: string | undefined = undefined;
+
+    // Detect #project or specific main project names
+    const projectMatch = text.match(/#(\S+)/);
+    if (projectMatch) {
+        project = projectMatch[1];
+    } else if (lowerText.includes('thetorqking.com')) {
+        project = 'thetorqking.com';
+    } else if (lowerText.includes('for ')) {
+        const parts = text.split(/for /i);
+        if (parts.length > 1) {
+            const potential = parts[1].trim().split(' ')[0].replace(/[.!?]/g, '');
+            if (potential.includes('.') || potential.length > 3) {
+                project = potential;
+            }
+        }
+    }
+
+    return { priority, category, dueDate, project };
 };
 
 export const parseIntent = (text: string) => {
@@ -51,6 +70,13 @@ export const parseIntent = (text: string) => {
 
     if (lowerText.includes('high tasks')) {
         return { type: 'QUERY_TASKS', filter: 'HIGH_PRIORITY' };
+    }
+
+    if (lowerText.includes('show project') || lowerText.includes('tasks for project')) {
+        const parts = text.split(/(?:show project|tasks for project)\s+/i);
+        if (parts.length > 1) {
+            return { type: 'QUERY_PROJECT', project: parts[1].trim().split(' ')[0] };
+        }
     }
 
     return { type: 'CREATE_TASK', query: text };

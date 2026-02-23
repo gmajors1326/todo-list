@@ -11,10 +11,17 @@ interface MainViewProps {
 }
 
 const MainView: React.FC<MainViewProps> = ({ view, tasks, onUpdateTask, onDeleteTask }) => {
+    const isProjectView = view.startsWith('Project: ');
+    const projectName = isProjectView ? view.replace('Project: ', '') : null;
+
     const filteredTasks = tasks.filter(task => {
+        if (projectName) {
+            return task.project === projectName;
+        }
+
         switch (view) {
             case 'Inbox':
-                return task.status === 'OPEN';
+                return !task.project && task.status === 'OPEN';
             case 'Today':
                 if (task.status === 'DONE') return false;
                 const today = new Date().toDateString();
@@ -70,12 +77,18 @@ const MainView: React.FC<MainViewProps> = ({ view, tasks, onUpdateTask, onDelete
         return (
             <div className="fade-in">
                 <header style={{ marginBottom: '32px' }}>
-                    <h2 style={{ fontSize: '2rem', fontWeight: '700' }}>{view}</h2>
+                    <h2 style={{ fontSize: '2rem', fontWeight: '700' }}>
+                        {projectName ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ opacity: 0.5 }}>Project:</span> {projectName}
+                            </div>
+                        ) : view}
+                    </h2>
                 </header>
                 <div style={{ display: 'grid', gap: '12px' }}>
-                    {filteredTasks.map(t => (
+                    {filteredTasks.length > 0 ? filteredTasks.map(t => (
                         <TaskCard key={t.id} task={t} onUpdate={onUpdateTask} onDelete={onDeleteTask} />
-                    ))}
+                    )) : <p style={{ opacity: 0.5 }}>No tasks found in this view.</p>}
                 </div>
             </div>
         );
