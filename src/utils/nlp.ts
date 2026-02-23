@@ -1,0 +1,57 @@
+import * as chrono from 'chrono-node';
+import type { Priority, Category } from '../types/task';
+
+export const triageTask = (text: string): { priority: Priority; category: Category; dueDate: Date | null } => {
+    const lowerText = text.toLowerCase();
+
+    let priority: Priority = 'MED';
+
+    const highKeywords = ['today', 'asap', 'urgent', 'deadline', 'due', 'invoice', 'customer', 'call', 'quote', 'shipment'];
+    const lowKeywords = ['someday', 'maybe', 'idea', 'nice-to-have'];
+
+    if (highKeywords.some(k => lowerText.includes(k))) {
+        priority = 'HIGH';
+    } else if (lowKeywords.some(k => lowerText.includes(k))) {
+        priority = 'LOW';
+    }
+
+    const parsedDates = chrono.parse(text);
+    let dueDate: Date | null = null;
+    if (parsedDates.length > 0) {
+        dueDate = parsedDates[0].start.date();
+
+        const now = new Date();
+        const fortyEightHoursFromNow = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+        if (dueDate <= fortyEightHoursFromNow) {
+            priority = 'HIGH';
+        }
+    }
+
+    let category: Category = 'Other';
+    if (lowerText.includes('work')) category = 'Work';
+    else if (lowerText.includes('home')) category = 'Home';
+    else if (lowerText.includes('health')) category = 'Health';
+    else if (lowerText.includes('finance')) category = 'Finance';
+    else if (lowerText.includes('errands')) category = 'Errands';
+    else if (lowerText.includes('content')) category = 'Content';
+
+    return { priority, category, dueDate };
+};
+
+export const parseIntent = (text: string) => {
+    const lowerText = text.toLowerCase();
+
+    if (lowerText.startsWith('add ') || lowerText.startsWith('new ') || lowerText.startsWith('create ')) {
+        return { type: 'CREATE_TASK', query: text.replace(/^(add|new|create)\s+/i, '') };
+    }
+
+    if (lowerText.includes('what are my top 3') || lowerText.includes('show today')) {
+        return { type: 'QUERY_TASKS', filter: 'TODAY_TOP3' };
+    }
+
+    if (lowerText.includes('high tasks')) {
+        return { type: 'QUERY_TASKS', filter: 'HIGH_PRIORITY' };
+    }
+
+    return { type: 'CREATE_TASK', query: text };
+};
