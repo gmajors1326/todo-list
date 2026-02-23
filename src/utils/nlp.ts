@@ -38,18 +38,30 @@ export const triageTask = (text: string): { priority: Priority; category: Catego
     // Project detection
     let project: string | undefined = undefined;
 
-    // Detect #project or specific main project names
-    const projectMatch = text.match(/#(\S+)/);
-    if (projectMatch) {
-        project = projectMatch[1];
-    } else if (lowerText.includes('thetorqking.com')) {
-        project = 'thetorqking.com';
-    } else if (lowerText.includes('for ')) {
-        const parts = text.split(/for /i);
-        if (parts.length > 1) {
-            const potential = parts[1].trim().split(' ')[0].replace(/[.!?]/g, '');
-            if (potential.includes('.') || potential.length > 3) {
-                project = potential;
+    const specificProjects = [
+        'app.freespiritmarketer.com',
+        'freespiritmarketer.com',
+        'thetorqking.com',
+        'texlinemortgage.com'
+    ];
+
+    // Check for specific project mentions
+    const foundSpecific = specificProjects.find(p => lowerText.includes(p));
+
+    if (foundSpecific) {
+        project = foundSpecific;
+    } else {
+        // Detect #project or "for project.com"
+        const projectMatch = text.match(/#(\S+)/);
+        if (projectMatch) {
+            project = projectMatch[1];
+        } else if (lowerText.includes('for ')) {
+            const parts = text.split(/for /i);
+            if (parts.length > 1) {
+                const potential = parts[1].trim().split(' ')[0].replace(/[.!?]/g, '');
+                if (potential.includes('.') || potential.length > 3) {
+                    project = potential;
+                }
             }
         }
     }
