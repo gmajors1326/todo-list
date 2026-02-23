@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Task, Priority } from '../../types/task';
-import { CheckCircle2, Circle, Clock, Tag, Hash, AlertCircle, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Tag, Hash, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 
 interface TaskCardProps {
     task: Task;
@@ -11,6 +11,16 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [showPriorityMenu, setShowPriorityMenu] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState(task.title);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [isEditing]);
 
     const toggleStatus = () => {
         onUpdate(task.id, { status: task.status === 'DONE' ? 'OPEN' : 'DONE' });
@@ -19,6 +29,24 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
     const handlePriorityChange = (newPriority: Priority) => {
         onUpdate(task.id, { priority: newPriority });
         setShowPriorityMenu(false);
+    };
+
+    const handleSaveEdit = () => {
+        if (editValue.trim() && editValue !== task.title) {
+            onUpdate(task.id, { title: editValue.trim() });
+        } else {
+            setEditValue(task.title);
+        }
+        setIsEditing(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleSaveEdit();
+        } else if (e.key === 'Escape') {
+            setEditValue(task.title);
+            setIsEditing(false);
+        }
     };
 
     return (
@@ -35,7 +63,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
                 gap: '16px',
                 opacity: task.status === 'DONE' ? 0.6 : 1,
                 position: 'relative',
-                zIndex: showPriorityMenu ? 1000 : 1
+                zIndex: (showPriorityMenu || isEditing) ? 1000 : 1,
+                padding: '16px'
             }}
         >
             <button onClick={toggleStatus} style={{ color: task.status === 'DONE' ? '#10b981' : '#94a3b8', marginTop: '2px' }}>
@@ -43,14 +72,41 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
             </button>
 
             <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                    <h4 style={{
-                        fontSize: '1rem',
-                        fontWeight: '500',
-                        textDecoration: task.status === 'DONE' ? 'line-through' : 'none'
-                    }}>
-                        {task.title}
-                    </h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    {isEditing ? (
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={handleSaveEdit}
+                            onKeyDown={handleKeyDown}
+                            style={{
+                                flex: 1,
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid var(--accent-color)',
+                                borderRadius: '4px',
+                                color: '#fff',
+                                padding: '4px 8px',
+                                fontSize: '1rem',
+                                outline: 'none',
+                                fontWeight: '500'
+                            }}
+                        />
+                    ) : (
+                        <h4
+                            onClick={() => setIsEditing(true)}
+                            style={{
+                                fontSize: '1rem',
+                                fontWeight: '500',
+                                textDecoration: task.status === 'DONE' ? 'line-through' : 'none',
+                                cursor: 'text',
+                                flex: 1
+                            }}
+                        >
+                            {task.title}
+                        </h4>
+                    )}
                     {task.project && (
                         <span style={{
                             fontSize: '0.7rem',
@@ -154,13 +210,22 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
             </div>
 
             {isHovered && (
-                <button
-                    onClick={() => onDelete(task.id)}
-                    style={{ color: '#ef4444', opacity: 0.7, padding: '4px' }}
-                    title="Delete task"
-                >
-                    <Trash2 size={18} />
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        style={{ color: '#94a3b8', opacity: 0.7, padding: '4px' }}
+                        title="Edit task"
+                    >
+                        <Edit2 size={18} />
+                    </button>
+                    <button
+                        onClick={() => onDelete(task.id)}
+                        style={{ color: '#ef4444', opacity: 0.7, padding: '4px' }}
+                        title="Delete task"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                </div>
             )}
         </div>
     );
