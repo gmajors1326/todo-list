@@ -61,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, projects })
                     ))}
                 </ul>
 
-                {projects.length > 0 && (
+                {projects.length > 0 ? (
                     <>
                         <h3 style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '32px', marginBottom: '12px', color: 'var(--text-secondary)', paddingLeft: '16px' }}>Projects</h3>
                         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -89,7 +89,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, projects })
                             ))}
                         </ul>
                     </>
+                ) : (
+                    <div style={{ marginTop: '32px', padding: '16px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-color)' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                            <strong>Pro Tip:</strong> Add tasks with <code>#hashtags</code> or mention <code>thetorqking.com</code> to create projects automatically.
+                        </p>
+                    </div>
                 )}
+
             </nav>
 
             <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: 'auto' }}>
